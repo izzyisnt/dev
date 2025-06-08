@@ -1,0 +1,26 @@
+name: Build & Push to GHCR
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push image
+        run: |
+          docker build --build-arg PUBLIC_KEY="${{ secrets.PUBLIC_KEY }}" -t ghcr.io/${{ github.repository_owner }}/surfdock-dev:latest .
+          docker push ghcr.io/${{ github.repository_owner }}/surfdock-dev:latest
