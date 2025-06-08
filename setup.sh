@@ -4,9 +4,6 @@ set -euxo pipefail
 # === SurfDock Setup Script (bootstrap stage) ===
 echo "🚀 Starting SurfDock setup in container..."
 
-# Optional: virtualenv setup (skip if installing system-wide)
-# python3 -m venv /opt/venv && source /opt/venv/bin/activate
-
 # === System Dependencies (add as needed during testing) ===
 echo "📦 Installing system packages..."
 apt-get update && \

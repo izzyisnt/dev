@@ -8,12 +8,14 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
  && rm -rf /var/lib/apt/lists/*
 
 # Add docker user for SSH login
+# Use root instead
 RUN useradd -ms /bin/bash docker && \
     echo "docker ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
     mkdir -p /var/run/sshd /home/docker/.ssh && \
     chown docker:docker /home/docker/.ssh
 
 # Inject public key at build time
+# Use root instead--toggle sshd flag if necessary
 ARG PUBLIC_KEY
 RUN echo "${PUBLIC_KEY}" > /home/docker/.ssh/authorized_keys && \
     chmod 600 /home/docker/.ssh/authorized_keys && \
@@ -25,5 +27,6 @@ COPY setup.sh /usr/local/bin/setup.sh
 RUN chmod +x /usr/local/bin/setup.sh
 
 
+# Needs to be not 22 for runpod?
 EXPOSE 22
 CMD ["/usr/sbin/sshd", "-D"]
