@@ -12,25 +12,30 @@ jobs:
       packages: write
 
     steps:
-      - uses: actions/checkout@v3
+      - name: 📥 Checkout code
+        uses: actions/checkout@v3
 
-      - name: Log in to GHCR
+      - name: 🔐 Log in to GHCR
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image
+      - name: 🛠️ Build and push image
         run: |
           docker build --build-arg PUBLIC_KEY="${{ secrets.PUBLIC_KEY }}" -t ghcr.io/${{ github.repository_owner }}/surfdock-dev:latest .
           docker push ghcr.io/${{ github.repository_owner }}/surfdock-dev:latest
 
-      - name: (Optional) Make container public
-        if: secrets.GH_PAT != ''
+      - name: 🔓 (Optional) Make container public
         run: |
-          echo "${{ secrets.GH_PAT }}" | gh auth login --with-token
-          gh api -X PATCH "/users/${{ github.repository_owner }}/packages/container/surfdock-dev/visibility" -f visibility=public || echo "⚠️ Visibility change failed. Continuing..."
+          if [ -n "${GH_PAT}" ]; then
+            echo "${GH_PAT}" | gh auth login --with-token
+            gh api -X PATCH "/users/${{ github.repository_owner }}/packages/container/surfdock-dev/visibility" -f visibility=public \
+              || echo "⚠️ Visibility change failed. Continuing..."
+          else
+            echo "🔒 GH_PAT not set, skipping visibility change."
+          fi
         env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         continue-on-error: true
