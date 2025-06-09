@@ -17,11 +17,12 @@ RUN pip install --upgrade pip setuptools wheel && \
       rdkit-pypi==2022.9.5 \
       trimesh openmm pymeshfix plyfile loguru matplotlib pyvista Pillow
 
-# Copy SSH key (baked in at build time)
 ARG PUBLIC_KEY
 RUN mkdir -p /root/.ssh && \
-    echo "${PUBLIC_KEY}" >> /root/.ssh/authorized_keys && \
+    chmod 700 /root/.ssh && \
+    echo "${PUBLIC_KEY}" > /root/.ssh/authorized_keys && \
     chmod 600 /root/.ssh/authorized_keys
+
 
 # ── Stage 2: runtime ────────────────────────────────
 FROM nvidia/cuda:12.3.0-runtime-ubuntu22.04
