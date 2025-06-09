@@ -1,35 +1,21 @@
-#!/bin/bash
-set -euxo pipefail
+#!/usr/bin/env bash
+set -euo pipefail
 
-# === SurfDock Setup Script (bootstrap stage) ===
-echo "🚀 Starting SurfDock setup in container..."
+# Build & tag locally
+docker build \
+  --build-arg PUBLIC_KEY="$(cat ~/.ssh/id_ed25519.pub)" \
+  -t izzyisnt/dev:local \
+  .
 
-# === System Dependencies (add as needed during testing) ===
-echo "📦 Installing system packages..."
-apt-get update && \
-DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    libeigen3-dev \
-    libboost-all-dev \
-    openbabel \
-    swig \
-    g++ \
-    libopenmm-dev \
-    cmake \
-    make \
-    && rm -rf /var/lib/apt/lists/*
+# Tag for GHCR
+docker tag izzyisnt/dev:local ghcr.io/izzyisnt/dev:latest
 
-# === Python Dependencies ===
-echo "🐍 Installing Python packages..."
-pip install --upgrade pip setuptools wheel
+echo "▶ Smoke-testing local image…"
+docker run --rm izzyisnt/dev:local python - <<'PY'
+import torch, sys; from rdkit import Chem
+assert torch.cuda.is_available(), "CUDA disabled"
+assert Chem.MolFromSmiles("CCO")
+print("✓ Torch & RDKit OK")
+PY
 
-# You can add additional pip packages here as you confirm they work:
-pip install trimesh openmm pymeshfix plyfile rdkit-pypi loguru
-
-# === Mountpoint/Project install ===
-echo "📂 Checking for editable install..."
-if [ -f "/workspace/setup.py" ] && [ ! -f "/workspace/.setup_complete" ]; then
-    pip install -e /workspace
-    touch /workspace/.setup_complete
-fi
-
-echo "✅ SurfDock environment ready."
+echo "✅ Local image ready: izzyisnt/dev:local"

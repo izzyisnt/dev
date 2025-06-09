@@ -12,31 +12,46 @@ jobs:
       packages: write
 
     steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: 🔐 Log in to GHCR
+      # Use Docker layer cache to speed up repeated runs
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to GHCR
         uses: docker/login-action@v2
         with:
           registry: ghcr.io
-          username: izzyisnt
-          password: ${{ secrets.GH_PAT }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Build & push image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/dev:latest
+          build-args: |
+            PUBLIC_KEY=${{ secrets.PUBLIC_KEY }}
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/dev:cache
+          cache-to:   type=registry,ref=ghcr.io/${{ github.repository_owner }}/dev:cache,mode=max
 
-      - name: 🛠️ Build and push image
+      - name: Move cache
         run: |
-          docker build --build-arg PUBLIC_KEY="${{ secrets.PUBLIC_KEY }}" -t ghcr.io/${{ github.repository_owner }}/surfdock-dev:latest .
-          docker push ghcr.io/${{ github.repository_owner }}/surfdock-dev:latest
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
-      - name: 🔓 (Optional) Make container public
+      # Post-build validation inside the pushed image
+      - name: Smoke-test RDKit + PyTorch
         run: |
-          if [ -n "${GH_PAT}" ]; then
-            echo "${GH_PAT}" | gh auth login --with-token
-            gh api -X PATCH "/users/${{ github.repository_owner }}/packages/container/surfdock-dev/visibility" -f visibility=public \
-              || echo "⚠️ Visibility change failed. Continuing..."
-          else
-            echo "🔒 GH_PAT not set, skipping visibility change."
-          fi
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
-        continue-on-error: true
+          docker run --rm ghcr.io/${{ github.repository_owner }}/dev:latest \
+            bash -c "python -c \"import torch; print('Torch OK')\" && \
+                     python -c \"from rdkit import Chem; assert Chem.MolFromSmiles('CCO')\""
