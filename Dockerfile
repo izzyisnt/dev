@@ -7,12 +7,6 @@ RUN apt-get update && \
       python3.10 python3-pip python3-distutils sudo git curl && \
     rm -rf /var/lib/apt/lists/*
 
-# Install all Python deps
-RUN pip install --upgrade pip setuptools wheel && \
-    pip install \
-      rdkit-pypi==2022.9.5 \
-      trimesh openmm pymeshfix plyfile loguru matplotlib pyvista Pillow
-
 # Inject your SSH public key (build‐arg)
 ARG PUBLIC_KEY
 RUN mkdir -p /root/.ssh && \
@@ -32,6 +26,12 @@ RUN apt-get update && \
 
 # 2) Symlink python → python3
 RUN ln -s /usr/bin/python3 /usr/bin/python
+
+RUN pip install \
+      rdkit-pypi==2022.9.5 \
+      trimesh openmm pymeshfix plyfile loguru matplotlib pyvista Pillow
+
+
 
 # 3) Ensure SSH dirs
 RUN mkdir -p /run/sshd /root/.ssh && chmod 700 /root/.ssh
