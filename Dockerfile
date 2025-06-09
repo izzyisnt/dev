@@ -4,7 +4,7 @@ FROM nvidia/cuda:12.3.0-devel-ubuntu22.04 AS builder
 # Install system deps
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
-      python3.10 python3-pip python3-distutils sudo git curl && \
+      sudo git curl && \
     rm -rf /var/lib/apt/lists/*
 
 # Inject your SSH public key (build‐arg)
@@ -21,7 +21,7 @@ FROM nvidia/cuda:12.3.0-runtime-ubuntu22.04
 # 1) Install SSH + Python runtime
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
-      openssh-server python3 python3-distutils && \
+      openssh-server python3 python3-pip python3-distutils && \
     rm -rf /var/lib/apt/lists/*
 
 # 2) Symlink python → python3
