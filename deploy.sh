@@ -23,12 +23,12 @@ log()   { printf '%s %s\n' "$(date +%H:%M:%S)" "$*"; }
 debug() { [[ "${DEBUG:-0}" == 0 ]] || log "$*"; }
 
 # ───── CREATE POD ───────────────────────────────────────────────────
-log "🚀 runpodctl create pod (image=$IMAGE gpu=\"$GPU\" ports=2222/tcp)"
+log "🚀 runpodctl create pod (image=$IMAGE gpu=\"$GPU\" ports=22/tcp)"
 CREATE_OUT=$(runpodctl create pod \
              --name "$POD_NAME" \
              --imageName "$IMAGE" \
              --gpuType "$GPU" \
-             --ports "2222/tcp")
+             --ports "22/tcp")
 
 log "$CREATE_OUT"
 POD_ID=$(awk -F'"' '/^pod "/{print $2}' <<<"$CREATE_OUT" | tr -d '[:space:]')
@@ -58,7 +58,7 @@ while (( tries < MAX_TRIES )); do
       log "🔍 state=$state  ip=${ip:-<none>}  ports=$ports"
 
       if [[ $state == "RUNNING" && -n $ip ]]; then
-          ssh_port=$(jq -r '."2222" // empty' <<<"$ports")
+          ssh_port=$(jq -r '."22" // empty' <<<"$ports")
           log "✅ Ready – SSH: ssh root@${ip}${ssh_port:+ -p $ssh_port}"
           exit 0
       fi

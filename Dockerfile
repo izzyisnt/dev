@@ -23,6 +23,16 @@ RUN mkdir -p /root/.ssh && \
     echo "${PUBLIC_KEY}" > /root/.ssh/authorized_keys && \
     chmod 600 /root/.ssh/authorized_keys
 
+# Patch sshd_config to ensure key-based login works
+RUN sed -i -E \
+    -e 's/^#?PasswordAuthentication .*/PasswordAuthentication no/' \
+    -e 's/^#?PermitRootLogin .*/PermitRootLogin yes/' \
+    -e 's|^#?AuthorizedKeysFile .*|AuthorizedKeysFile .ssh/authorized_keys|' \
+    /etc/ssh/sshd_config
+
+RUN sshd -t
+
+
 
 # ── Stage 2: runtime ────────────────────────────────
 FROM nvidia/cuda:12.3.0-runtime-ubuntu22.04
