@@ -14,17 +14,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      # Use Docker layer cache to speed up repeated runs
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
-
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
+        with:
+          install: true
 
       - name: Log in to GHCR
         uses: docker/login-action@v2
@@ -39,27 +32,18 @@ jobs:
           context: .
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/dev:latest
+          platforms: linux/amd64
           build-args: |
             PUBLIC_KEY=${{ secrets.PUBLIC_KEY }}
           cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/dev:cache
           cache-to:   type=registry,ref=ghcr.io/${{ github.repository_owner }}/dev:cache,mode=max
 
-      - name: Save Docker build cache
-        if: success()
-        run: |
-          if [ -d /tmp/.buildx-cache-new ]; then
-            rm -rf /tmp/.buildx-cache
-            mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-            echo "✅ Cache updated."
-          else
-            echo "⚠️  No new buildx cache found; skipping mv"
-          fi
-
-
-
-      # Post-build validation inside the pushed image
-      - name: Smoke-test RDKit + PyTorch
+      - name: Smoke-test Torch
         run: |
           docker run --rm ghcr.io/${{ github.repository_owner }}/dev:latest \
-            bash -c "python -c \"import torch; print('Torch OK')\" && \
-                     python -c \"from rdkit import Chem; assert Chem.MolFromSmiles('CCO')\""
+            python -c "import torch; print('Torch OK')"
+
+      - name: Smoke-test RDKit
+        run: |
+          docker run --rm ghcr.io/${{ github.repository_owner }}/dev:latest \
+            python -c "from rdkit import Chem; assert Chem.MolFromSmiles('CCO'); print('RDKit OK')"
