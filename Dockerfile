@@ -28,14 +28,9 @@ RUN mkdir -p /root/.ssh && \
 
 # ── Stage 2: runtime ────────────────────────────────
 FROM nvidia/cuda:12.3.0-runtime-ubuntu22.04
-
-# Copy runtime bits from builder
-#COPY --from=builder /usr/local/lib/python3.10/dist-packages /usr/local/lib/python3.10/dist-packages
-COPY --from=builder /usr/local/lib/python3.10/dist-packages/torch* /opt/python_pkgs/
-COPY --from=builder /usr/local/lib/python3.10/dist-packages/rdkit* /opt/python_pkgs/
-COPY --from=builder /usr/local/bin/pip* /usr/local/bin/
-COPY --from=builder /usr/bin/python3 /usr/bin/python3
-ENV PYTHONPATH=/opt/python_pkgs
+COPY --from=builder /usr/local/lib/python3.10/dist-packages /usr/local/lib/python3.10/dist-packages
+#COPY --from=builder /usr/local/bin/pip* /usr/local/bin/
+#COPY --from=builder /usr/bin/python3 /usr/bin/python3
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # Re-create SSH dirs
