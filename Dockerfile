@@ -4,18 +4,15 @@ FROM nvidia/cuda:12.3.0-devel-ubuntu22.04 AS builder
 # Install system deps
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
-      python3.10 python3-pip python3-venv sudo openssh-server git curl && \
+      python3.10 python3-pip python3-distutils  sudo openssh-server git curl && \
     rm -rf /var/lib/apt/lists/*
-
-# Symlink python
-RUN ln -s /usr/bin/python3 /usr/bin/python
 
 # Install all Python deps (torch, rdkit, etc.)
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install \
-      "numpy<2.0" \
-      torch==2.5.1+cu121 torchvision==0.20.1+cu121 torchaudio==2.5.1+cu121 \
-        --index-url https://download.pytorch.org/whl/cu121 && \
+#    pip install \
+#      "numpy<2.0" \
+#      torch==2.5.1+cu121 torchvision==0.20.1+cu121 torchaudio==2.5.1+cu121 \
+#        --index-url https://download.pytorch.org/whl/cu121 && \
     pip install \
       rdkit-pypi==2022.9.5 \
       trimesh openmm pymeshfix plyfile loguru matplotlib pyvista Pillow
